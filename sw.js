@@ -1,1 +1,17 @@
-const CACHE='zihin-atlasi-cache-v2';const FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;e.respondWith(fetch(e.request).then(r=>{if(r.ok){const clone=r.clone();caches.open(CACHE).then(c=>c.put(e.request,clone))}return r}).catch(()=>caches.match(e.request)))})
+/* Keep the app shell consistent between releases. User data lives in localStorage. */
+const CACHE='zihin-atlasi-shell-v2.0.0';
+const FILES=['./','./index.html','./styles.css','./core.js','./app.js','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+const SHELL=new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))));
+self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('zihin-atlasi-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;
+  const clean=new URL(event.request.url);clean.search='';clean.hash='';
+  if(!SHELL.has(clean.href)&&event.request.mode!=='navigate')return;
+  event.respondWith(caches.open(CACHE).then(async cache=>{
+    const cached=await cache.match(event.request.mode==='navigate'?'./index.html':clean.href);
+    if(cached)return cached;
+    try{return await fetch(event.request);}catch{return new Response('Çevrimdışısın. İlk kurulum için internete bağlan.',{status:503,headers:{'Content-Type':'text/plain; charset=utf-8'}});}
+  }));
+});
