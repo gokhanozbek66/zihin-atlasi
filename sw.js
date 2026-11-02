@@ -1,5 +1,5 @@
 /* Keep the app shell consistent between releases. User data lives in localStorage. */
-const CACHE='zihin-atlasi-shell-v2.0.0';
+const CACHE='zihin-atlasi-shell-v2.0.1';
 const FILES=['./','./index.html','./styles.css','./core.js','./app.js','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 const SHELL=new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))));
